@@ -10,6 +10,13 @@ defmodule ConsumingApisWeb.Auth.Guardian do
     Get.by_id(%{"id" => id})
   end
 
+  def build_claims(claims, _resource, _opts) do
+    exp = Guardian.timestamp() + 60
+    claims = Map.put(claims, "exp", exp)
+
+    {:ok, claims}
+  end
+
   def authenticate(%Schema{} = user, %{"password" => password}) do
     with true <- Pbkdf2.verify_pass(password, user.password),
          {:ok, token, _claims} <- encode_and_sign(user) do

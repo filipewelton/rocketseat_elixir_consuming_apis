@@ -4,6 +4,7 @@ defmodule ConsumingApisWeb.UsersController do
   alias ConsumingApis.Users.{Create, Get}
   alias ConsumingApisWeb.Auth.Guardian
   alias ConsumingApis.Client
+  alias Plug.Conn
 
   def create(conn, params) do
     with {:ok, id} <- Create.call(params) do
@@ -33,9 +34,19 @@ defmodule ConsumingApisWeb.UsersController do
     end
   end
 
-  def show(conn, %{"username" => username}) do
-    with {:ok, repos} <- Client.get_repositories(username) do
-      parsed = Jason.encode!(%{repositories: repos})
+  def show(%Conn{} = conn, %{"username" => username}) do
+    token =
+      Conn.get_req_header(conn, "authorization")
+      |> List.first()
+      |> String.replace("Bearer ", "")
+
+    with {:ok, repos} <- Client.get_repositories(username),
+         {:ok, _old, {new_token, _claims}} <- Guardian.refresh(token) do
+      parsed =
+        Jason.encode!(%{
+          repositories: repos,
+          token: new_token
+        })
 
       conn
       |> put_status(200)

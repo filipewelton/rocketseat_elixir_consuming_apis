@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   database:
-    container_name: database
+    container_name: consuming_apis_database
     image: postgres
     restart: always
     ports:
